@@ -8,7 +8,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root{
     --bg:#0c0e12;
@@ -21,13 +20,10 @@
     --pick:#4f9eff;
     --pack:#ff8a3d;
     --red:#e5484d;
-    --yellow:#f0a93a;
     --green:#2fbf71;
-    --row-line:#1c2027;
-    --mono:'JetBrains Mono','DejaVu Sans Mono','SFMono-Regular','Menlo','Consolas',ui-monospace,monospace;
-    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-    --display:'Oswald','Segoe UI Condensed',var(--sans);
-    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.55);
+    --mono:'JetBrains Mono','DejaVu Sans Mono',monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    --display:'Oswald',var(--sans);
   }
   html[data-theme="light"]{
     --bg:#f4f5f7;
@@ -37,231 +33,92 @@
     --text:#161a20;
     --muted:#5c6572;
     --dim:#939aa6;
-    --row-line:#edeff2;
-    --shadow:0 1px 2px rgba(20,25,35,.06), 0 10px 24px -14px rgba(20,25,35,.16);
   }
   *{box-sizing:border-box;}
   body{
     margin:0;
-    background:
-      radial-gradient(1200px 600px at 15% -10%, color-mix(in srgb, var(--pick) 10%, transparent) 0%, transparent 60%),
-      radial-gradient(900px 500px at 100% 0%, color-mix(in srgb, var(--pack) 10%, transparent) 0%, transparent 55%),
-      var(--bg);
+    background:var(--bg);
     color:var(--text);
     font-family:var(--sans);
     min-height:100vh;
-    padding:20px 24px 60px;
+    padding:20px 24px;
     transition:background .2s ease,color .2s ease;
   }
   .wrap{max-width:1320px;margin:0 auto;}
   .topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--line);}
-  .brand-eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;color:var(--pick);text-transform:uppercase;margin-bottom:6px;font-weight:600;}
-  h1{margin:0;font-family:var(--display);font-size:29px;font-weight:600;letter-spacing:.01em;text-transform:uppercase;}
+  h1{margin:0;font-family:var(--display);font-size:29px;font-weight:600;text-transform:uppercase;}
   .clock{font-family:var(--mono);font-size:13px;color:var(--muted);text-align:right;}
-  .clock b{color:var(--text);font-size:15px;letter-spacing:.03em;}
-  .pulse-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:6px;box-shadow:0 0 0 0 rgba(47,191,113,.6);animation:pulse 2s infinite;}
-  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(47,191,113,.5);}70%{box-shadow:0 0 0 7px rgba(47,191,113,0);}100%{box-shadow:0 0 0 0 rgba(47,191,113,0);}}
+  .clock b{color:var(--text);font-size:15px;}
+  .pulse-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:6px;animation:pulse 2s infinite;}
+  @keyframes pulse{0%{opacity:1;}70%{opacity:0;}100%{opacity:0;}}
   .head-actions{display:flex;gap:14px;align-items:center;justify-content:flex-end;margin-top:6px;flex-wrap:wrap;}
   .theme-toggle{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--dim);cursor:pointer;background:var(--panel-2);border:1px solid var(--line);border-radius:20px;padding:4px 10px;}
   .theme-toggle:hover{border-color:var(--muted);}
-  .config-toggle{font-size:11px;color:var(--dim);cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+  .config-toggle{font-size:11px;color:var(--dim);cursor:pointer;text-decoration:underline;}
   .feeds{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
-  .feed{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;box-shadow:var(--shadow);}
+  .feed{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;}
   .feed:hover{border-color:var(--muted);}
-  .feed::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;}
-  .feed.pick::before{background:var(--pick);}
+  .feed::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--pick);}
   .feed.pack::before{background:var(--pack);}
-  .feed-icon{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:13px;flex-shrink:0;}
-  .feed.pick .feed-icon{background:rgba(79,158,255,.12);color:var(--pick);}
+  .feed-icon{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:13px;background:rgba(79,158,255,.12);color:var(--pick);flex-shrink:0;}
   .feed.pack .feed-icon{background:rgba(255,138,61,.12);color:var(--pack);}
-  .feed-body{flex:1;min-width:0;}
+  .feed-body{flex:1;}
   .feed-title{font-size:13px;font-weight:600;color:var(--text);}
-  .feed-sub{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .feed-drop{font-size:11px;color:var(--dim);margin-top:3px;}
+  .feed-sub{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:2px;}
   .feed input{display:none;}
-  .feed-btn{font-family:var(--sans);font-size:12px;font-weight:600;color:var(--text);background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:8px 12px;cursor:pointer;white-space:nowrap;}
+  .feed-btn{font-family:var(--sans);font-size:12px;font-weight:600;color:var(--text);background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:8px 12px;cursor:pointer;}
   .feed-btn:hover{border-color:var(--muted);}
-  .feed-reset{font-size:15px;color:var(--dim);flex-shrink:0;padding:4px 6px;border-radius:6px;cursor:pointer;}
-  .feed-reset:hover{color:var(--red);background:rgba(229,72,77,.12);}
-  .feed.drag{outline:2px dashed var(--muted);outline-offset:-6px;}
-  .upload-mode-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
-  .upload-mode-label{font-size:12px;color:var(--muted);font-weight:600;flex-shrink:0;}
-  #uploadModeToggle button{font-size:11.5px;padding:7px 11px;}
-  .banner{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px;font-size:12.5px;color:var(--muted);margin-bottom:22px;line-height:1.6;}
-  .banner b{color:var(--text);}
   .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:22px;}
-  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;box-shadow:var(--shadow);transition:transform .15s ease,border-color .15s ease;}
-  .kpi:hover{transform:translateY(-1px);border-color:var(--muted);}
-  .kpi-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--dim);font-weight:600;}
-  .kpi-val{font-family:var(--mono);font-size:26px;font-weight:700;margin-top:6px;letter-spacing:-.02em;}
-  .kpi-sub{font-size:11px;color:var(--muted);margin-top:3px;}
-  .kpi-val.g{color:var(--green);} .kpi-val.y{color:var(--yellow);} .kpi-val.r{color:var(--red);}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;box-shadow:var(--shadow);}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
+  .kpi-label{font-size:10.5px;text-transform:uppercase;color:var(--dim);font-weight:600;}
+  .kpi-val{font-family:var(--mono);font-size:26px;font-weight:700;margin-top:6px;}
+  .kpi-val.g{color:var(--green);}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px;}
   .panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
-  .panel-head-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-  .panel-head-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-  .panel-title{font-family:var(--display);font-size:14px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;}
-  .panel-note{font-size:11px;color:var(--dim);font-family:var(--mono);}
-  canvas{max-width:100%;}
+  .panel-title{font-family:var(--display);font-size:14px;font-weight:600;text-transform:uppercase;}
   .rtable{width:100%;border-collapse:collapse;font-size:13px;}
-  .rtable th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--dim);font-weight:600;padding:7px 4px;border-bottom:1px solid var(--line);}
-  .rtable td{padding:9px 4px;border-bottom:1px solid var(--row-line);color:var(--text);}
-  .rtable td.num, .rtable th.num{text-align:right;font-family:var(--mono);}
-  .rtable tr.total td{font-weight:700;color:var(--text);border-top:1px solid var(--line);}
-  .rtable tr.grand-total td{font-weight:700;color:var(--bg);background:var(--pick);border-top:1px solid var(--line);}
-  html[data-theme="light"] .rtable tr.grand-total td{color:#fff;}
-  .rtable tr.sub td{color:var(--muted);}
-  .dl-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.03em;color:var(--muted);background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:6px 10px;cursor:pointer;}
+  .rtable th{text-align:left;font-size:11px;text-transform:uppercase;color:var(--dim);font-weight:600;padding:7px 4px;border-bottom:1px solid var(--line);}
+  .rtable td{padding:9px 4px;border-bottom:1px solid var(--line);color:var(--text);}
+  .rtable td.num{text-align:right;font-family:var(--mono);}
+  .table-scroll{max-height:420px;overflow-y:auto;border-radius:8px;}
+  .dl-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--muted);background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:6px 10px;cursor:pointer;}
   .dl-btn:hover{color:var(--text);border-color:var(--muted);}
-  .dl-btn svg{width:11px;height:11px;flex-shrink:0;}
-  .dl-btn-main{font-family:var(--mono);font-size:11.5px;font-weight:700;letter-spacing:.03em;color:var(--bg);background:var(--green);border:1px solid var(--green);border-radius:8px;padding:9px 16px;cursor:pointer;}
+  .dl-btn-main{font-family:var(--mono);font-size:11.5px;font-weight:700;color:var(--bg);background:var(--green);border:1px solid var(--green);border-radius:8px;padding:9px 16px;cursor:pointer;}
   .dl-btn-main:hover{filter:brightness(1.08);}
-  .dl-btn-main svg{width:13px;height:13px;}
-  .rtable-note{font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.6;}
-  td.editable{cursor:text;border-bottom:1px dashed var(--line);}
-  td.editable:hover{background:var(--panel-2);}
-  td.editable:focus{outline:1.5px solid var(--pick);outline-offset:-1px;background:var(--panel-2);}
-  td.editable:empty::before{content:'— bấm để nhập —';color:var(--dim);font-style:italic;}
-  td.editable.saved-flash{background:color-mix(in srgb, var(--green) 20%, transparent);transition:background .8s ease;}
-  .rtable-note code{background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-family:var(--mono);color:var(--text);font-size:11px;}
-  .task-pill{display:inline-flex;align-items:center;gap:6px;font-weight:600;}
-  .task-pill i{width:8px;height:8px;border-radius:2px;display:inline-block;}
-  .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
-  .stacked-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
-  .hourly-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-  .split-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-  .split-grid > div:not(:first-child){border-left:1px solid var(--line);padding-left:20px;}
-  .panel-head.mini{margin-bottom:8px;}
-  .panel-title.mini{font-size:12px;color:var(--muted);text-transform:none;letter-spacing:0;font-family:var(--sans);font-weight:600;}
-  .table-controls{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center;}
-  .table-controls input, .table-controls select{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:8px 10px;font-size:12.5px;font-family:var(--sans);}
-  .table-controls input{flex:1;min-width:180px;}
-  table{width:100%;border-collapse:collapse;font-size:12.5px;}
-  .sort-toggle{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
-  .sort-toggle button{background:var(--panel-2);border:none;color:var(--muted);font-family:var(--sans);font-size:12px;padding:8px 12px;cursor:pointer;white-space:nowrap;}
-  .sort-toggle button:not(:last-child){border-right:1px solid var(--line);}
-  .sort-toggle button.active{background:var(--pick);color:#fff;font-weight:600;}
-  .hist-banner{display:none;align-items:center;justify-content:space-between;gap:12px;background:rgba(240,169,58,.1);border:1px solid var(--yellow);color:var(--yellow);border-radius:8px;padding:10px 12px;margin-bottom:12px;}
-  .hist-banner button{background:var(--yellow);color:#1a1400;border:none;border-radius:6px;padding:6px 12px;font-family:var(--mono);font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;}
-  .hist-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
-  .hist-controls select{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:7px 9px;font-size:12px;font-family:var(--sans);}
-  thead th .sort-arrow{margin-left:4px;font-size:9px;color:var(--pick);}
-  thead th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);border-bottom:1px solid var(--line);padding:8px 10px;cursor:pointer;user-select:none;}
-  thead th:hover{color:var(--muted);}
-  tbody td{padding:8px 10px;border-bottom:1px solid var(--row-line);font-family:var(--mono);}
-  tbody tr:hover{background:var(--panel-2);}
-  .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;font-family:var(--mono);}
-  .badge.red{background:rgba(229,72,77,.15);color:var(--red);}
-  .badge.yellow{background:rgba(240,169,58,.15);color:var(--yellow);}
-  .badge.green{background:rgba(47,191,113,.15);color:var(--green);}
-  .task-tag{font-family:var(--mono);font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:4px;}
-  .task-tag.pick{background:rgba(79,158,255,.14);color:var(--pick);}
-  .task-tag.pack{background:rgba(255,138,61,.14);color:var(--pack);}
-  .target-badge{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:11.5px;font-weight:700;color:var(--green);background:rgba(47,191,113,.14);border:1px solid rgba(47,191,113,.3);border-radius:6px;padding:4px 10px;}
-  td.total-col, th.total-col{background:color-mix(in srgb, var(--pick) 8%, transparent);font-weight:700;color:var(--text);}
-  th.total-col{color:var(--pick);}
-  .rowidx{color:var(--dim);font-family:var(--mono);font-size:11.5px;}
-  td.hnum{font-family:var(--mono);text-align:right;}
-  td.hnum .dash{color:var(--dim);}
-  td.hnum .indirect-cell{color:var(--red);font-weight:700;}
-  .table-scroll{max-height:420px;overflow-y:auto;overflow-x:auto;border-radius:8px;}
-  .table-scroll.short{max-height:520px;}
-  .table-scroll.tall{max-height:900px;}
-  .empty{text-align:center;color:var(--dim);padding:40px 0;font-size:12.5px;}
-  .pg-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;}
-  .pg-info{font-family:var(--mono);font-size:11.5px;color:var(--muted);}
-  .pg-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
-  .pg-btn{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:6px 11px;font-size:12px;font-family:var(--sans);cursor:pointer;transition:.15s;white-space:nowrap;}
-  .pg-btn:hover:not(:disabled){border-color:var(--muted);}
-  .pg-btn:disabled{opacity:.35;cursor:not-allowed;}
-  .pg-page{font-family:var(--mono);font-size:12px;color:var(--muted);padding:0 4px;white-space:nowrap;}
-  .pg-page b{color:var(--text);}
-  .footer-note{margin-top:26px;font-size:11px;color:var(--dim);text-align:center;line-height:1.7;}
   .config-panel{display:none;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:20px;}
   .config-panel.open{display:block;}
-  .config-section{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--line);}
-  .config-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
-  .config-section-title{font-size:11.5px;font-weight:700;color:var(--text);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em;}
   .config-row{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
-  .config-row label{font-size:12px;color:var(--muted);width:220px;flex-shrink:0;}
-  .config-row input{flex:1;min-width:120px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:8px 10px;font-size:12px;font-family:var(--mono);}
-  .config-row input.small{max-width:110px;flex:none;}
-  .config-row button{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;}
-  .config-row button:hover{border-color:var(--muted);}
-  .config-hint{font-size:11px;color:var(--dim);line-height:1.6;margin-top:4px;}
-  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(6,8,12,.6);backdrop-filter:blur(2px);z-index:100;align-items:center;justify-content:center;padding:24px;}
-  .modal-overlay.open{display:flex;}
-  .modal-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;max-width:720px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:var(--shadow);}
-  .modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:18px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);}
-  .modal-head h2{margin:0;font-family:var(--display);font-size:16px;text-transform:uppercase;letter-spacing:.03em;}
-  .modal-close{cursor:pointer;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:6px 11px;font-size:13px;line-height:1;}
-  .modal-close:hover{border-color:var(--muted);}
-  .modal-body{padding:8px 20px 22px;}
-  .kpi-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;}
-  .zoom-ctrl{display:flex;align-items:center;gap:0;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
-  .zoom-ctrl button{background:var(--panel-2);border:none;color:var(--text);font-size:14px;font-weight:700;padding:6px 12px;cursor:pointer;}
-  .zoom-ctrl button:hover{background:var(--line);}
-  .zoom-ctrl span{font-family:var(--mono);font-size:12px;color:var(--muted);padding:0 10px;min-width:44px;text-align:center;}
-  .edit-toggle{display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:7px;padding:6px 12px;font-size:12px;cursor:pointer;color:var(--muted);background:var(--panel-2);user-select:none;}
-  .edit-toggle.active{color:var(--green);border-color:rgba(47,191,113,.4);background:rgba(47,191,113,.1);}
-  .col-toggle-wrap{position:relative;}
-  .col-toggle-btn{border:1px solid var(--line);border-radius:7px;padding:6px 12px;font-size:12px;cursor:pointer;color:var(--muted);background:var(--panel-2);}
-  .col-toggle-btn:hover{border-color:var(--muted);}
-  .col-toggle-menu{display:none;position:absolute;top:calc(100% + 6px);left:0;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px;box-shadow:var(--shadow);z-index:20;min-width:200px;}
-  .col-toggle-menu.open{display:block;}
-  .col-toggle-menu label{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text);padding:5px 2px;cursor:pointer;white-space:nowrap;}
-  #kpiHourlyTable{transition:font-size .12s ease;}
-  #kpiHourlyTable .col-hidden{display:none;}
-  .drive-status{font-family:var(--mono);font-size:11px;color:var(--dim);margin-left:8px;}
-  .drive-status.ok{color:var(--green);}
-  .drive-status.err{color:var(--red);}
-  @media(max-width:900px){
-    .kpis{grid-template-columns:repeat(2,1fr);}
-    .summary-grid,.stacked-grid,.hourly-grid,.split-grid{grid-template-columns:1fr;}
-    .split-grid > div:not(:first-child){border-left:none;padding-left:0;border-top:1px solid var(--line);padding-top:16px;}
-    .feeds{grid-template-columns:1fr;}
-    .topbar{flex-direction:column;align-items:flex-start;}
-    .clock{text-align:left;}
-    .head-actions{justify-content:flex-start;}
-    .panel-head{align-items:flex-start;}
-  }
-  @media(max-width:520px){
-    body{padding:14px 12px 40px;}
-    h1{font-size:22px;}
-  }
+  .config-row label{font-size:12px;color:var(--muted);flex-shrink:0;}
+  .config-row input.small{max-width:110px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:8px 10px;font-size:12px;}
+  .footer-note{margin-top:26px;font-size:11px;color:var(--dim);text-align:center;}
+  @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr);}.feeds{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="topbar">
     <div>
-      <div class="brand-eyebrow">WMS · Ops Floor Monitor</div>
-      <h1>Bảng điều khiển Năng suất — Pick / Pack</h1>
+      <h1>📊 Pick / Pack Dashboard</h1>
     </div>
     <div class="clock">
       <div><span class="pulse-dot"></span><b id="clockTime">--:--:--</b></div>
       <div id="clockDate">—</div>
       <div class="head-actions">
-        <button class="dl-btn-main" id="exportAllBtn" title="Xuất toàn bộ báo cáo">
-          📥 Xuất báo cáo
-        </button>
-        <span class="theme-toggle" id="themeToggle">🌙 <span id="themeLabel">Dark</span></span>
+        <button class="dl-btn-main" id="exportAllBtn">📥 Xuất Excel</button>
+        <span class="theme-toggle" id="themeToggle">🌙 Dark</span>
         <span class="config-toggle" id="configToggle">⚙ Cấu hình</span>
       </div>
     </div>
   </div>
 
   <div class="config-panel" id="configPanel">
-    <div class="config-section">
-      <div class="config-section-title">Ngưỡng RAG</div>
-      <div class="config-row">
-        <label>Picking — Đỏ dưới / Xanh từ</label>
-        <input type="number" id="pickRed" class="small" value="170"> – <input type="number" id="pickGreen" class="small" value="200">
-      </div>
-      <div class="config-row">
-        <label>Packing — Đỏ dưới / Xanh từ</label>
-        <input type="number" id="packRed" class="small" value="16"> – <input type="number" id="packGreen" class="small" value="25">
-      </div>
+    <div class="config-row">
+      <label>Picking Ngưỡng Green:</label>
+      <input type="number" id="pickGreen" class="small" value="200">
+    </div>
+    <div class="config-row">
+      <label>Packing Ngưỡng Green:</label>
+      <input type="number" id="packGreen" class="small" value="25">
     </div>
   </div>
 
@@ -269,257 +126,202 @@
     <label class="feed pick" id="dropPick">
       <div class="feed-icon">PK</div>
       <div class="feed-body">
-        <div class="feed-title">Picking — nguồn dữ liệu</div>
+        <div class="feed-title">Picking</div>
         <div class="feed-sub" id="pickFileName">Chưa có file</div>
-        <div class="feed-drop">Kéo–thả file .xlsx/.csv vào đây hoặc bấm để chọn</div>
       </div>
-      <span class="feed-btn">Tải file</span>
+      <span class="feed-btn">Chọn file</span>
       <input type="file" id="pickInput" accept=".xlsx,.xls,.csv" multiple>
     </label>
     <label class="feed pack" id="dropPack">
       <div class="feed-icon">PA</div>
       <div class="feed-body">
-        <div class="feed-title">Packing — nguồn dữ liệu</div>
+        <div class="feed-title">Packing</div>
         <div class="feed-sub" id="packFileName">Chưa có file</div>
-        <div class="feed-drop">Kéo–thả file .xlsx/.csv vào đây hoặc bấm để chọn</div>
       </div>
-      <span class="feed-btn">Tải file</span>
+      <span class="feed-btn">Chọn file</span>
       <input type="file" id="packInput" accept=".xlsx,.xls,.csv" multiple>
     </label>
   </div>
 
   <div class="kpis" id="kpiRow">
     <div class="kpi"><div class="kpi-label">Tổng nhân sự</div><div class="kpi-val" id="kpiTotal">—</div></div>
-    <div class="kpi"><div class="kpi-label">Pick — Green</div><div class="kpi-val g" id="kpiPickGreen">—</div></div>
-    <div class="kpi"><div class="kpi-label">Pack — Green</div><div class="kpi-val g" id="kpiPackGreen">—</div></div>
-    <div class="kpi"><div class="kpi-label">Tổng sản lượng</div><div class="kpi-val" id="kpiTotalOutput">—</div></div>
-    <div class="kpi"><div class="kpi-label">Tổng File</div><div class="kpi-val" id="kpiTotalFiles">—</div></div>
+    <div class="kpi"><div class="kpi-label">Pick Green</div><div class="kpi-val g" id="kpiPickGreen">—</div></div>
+    <div class="kpi"><div class="kpi-label">Pack Green</div><div class="kpi-val g" id="kpiPackGreen">—</div></div>
+    <div class="kpi"><div class="kpi-label">Tổng Output</div><div class="kpi-val" id="kpiTotalOutput">—</div></div>
+    <div class="kpi"><div class="kpi-label">Files</div><div class="kpi-val" id="kpiTotalFiles">—</div></div>
   </div>
 
   <div class="panel">
     <div class="panel-head">
-      <div class="panel-title">📋 Danh sách Picking</div>
-      <button class="dl-btn" onclick="downloadTable('tblPick')">📥 Tải xuống</button>
+      <div class="panel-title">📋 Picking</div>
+      <button class="dl-btn" onclick="downloadTable('tblPick')">📥 Download</button>
     </div>
-    <div class="table-scroll short">
+    <div class="table-scroll">
       <table class="rtable" id="tblPick">
         <thead>
-          <tr><th>Email</th><th>Tên nhân viên</th><th class="num">Sản lượng</th></tr>
+          <tr><th>Email</th><th>Name</th><th class="num">Output</th></tr>
         </thead>
         <tbody></tbody>
       </table>
     </div>
   </div>
 
-  <div class="panel" style="margin-top:16px;">
+  <div class="panel">
     <div class="panel-head">
-      <div class="panel-title">📋 Danh sách Packing</div>
-      <button class="dl-btn" onclick="downloadTable('tblPack')">📥 Tải xuống</button>
+      <div class="panel-title">📋 Packing</div>
+      <button class="dl-btn" onclick="downloadTable('tblPack')">📥 Download</button>
     </div>
-    <div class="table-scroll short">
+    <div class="table-scroll">
       <table class="rtable" id="tblPack">
         <thead>
-          <tr><th>Email</th><th>Tên nhân viên</th><th class="num">Sản lượng</th></tr>
+          <tr><th>Email</th><th>Name</th><th class="num">Output</th></tr>
         </thead>
         <tbody></tbody>
       </table>
     </div>
   </div>
 
-  <div class="footer-note">
-    Dữ liệu xử lý hoàn toàn trên trình duyệt • Dashboard v1.0
-  </div>
+  <div class="footer-note">Dashboard v1.0 • Data processed locally in browser</div>
 </div>
 
 <script>
-  // ========== Clock ==========
-  function tick(){
-    const d = new Date();
-    document.getElementById('clockTime').textContent = d.toLocaleTimeString('vi-VN', {hour12:false});
-    document.getElementById('clockDate').textContent = d.toLocaleDateString('vi-VN', {weekday:'long', year:'numeric', month:'2-digit', day:'2-digit'});
-  }
-  tick();
-  setInterval(tick, 1000);
+let pickData = [], packData = [];
 
-  // ========== State ==========
-  let pickData = [];
-  let packData = [];
+function tick(){
+  const d = new Date();
+  document.getElementById('clockTime').textContent = d.toLocaleTimeString('vi-VN', {hour12:false});
+  document.getElementById('clockDate').textContent = d.toLocaleDateString('vi-VN', {weekday:'long', year:'numeric', month:'2-digit', day:'2-digit'});
+}
+tick();
+setInterval(tick, 1000);
 
-  // ========== Theme Toggle ==========
-  function initTheme(){
-    const theme = localStorage.getItem('theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', theme);
-    updateThemeLabel(theme);
-  }
-  function updateThemeLabel(theme){
-    const label = document.getElementById('themeLabel');
-    const toggle = document.getElementById('themeToggle');
-    if (theme === 'light'){
-      label.textContent = 'Light';
-      toggle.textContent = '☀️ Light';
-    } else {
-      label.textContent = 'Dark';
-      toggle.textContent = '🌙 Dark';
-    }
-  }
-  document.getElementById('themeToggle').addEventListener('click', () => {
-    const current = document.documentElement.getAttribute('data-theme') || 'dark';
-    const next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('theme', next);
-    updateThemeLabel(next);
+function initTheme(){
+  const theme = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', theme);
+}
+function toggleTheme(){
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  document.getElementById('themeToggle').textContent = next === 'dark' ? '🌙 Dark' : '☀️ Light';
+}
+document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+initTheme();
+
+document.getElementById('configToggle').addEventListener('click', () => {
+  document.getElementById('configPanel').classList.toggle('open');
+});
+
+function handleFiles(files, task){
+  const fileArray = Array.from(files);
+  if (fileArray.length === 0) return;
+  const names = fileArray.map(f => f.name).join(', ');
+  document.getElementById(task + 'FileName').textContent = names;
+  fileArray.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, {header: 1});
+        parseFile(rows, task);
+      } catch (err){
+        alert('Error: ' + err.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);
   });
-  initTheme();
+}
 
-  // ========== Config Panel ==========
-  document.getElementById('configToggle').addEventListener('click', () => {
-    const panel = document.getElementById('configPanel');
-    panel.classList.toggle('open');
-  });
-
-  // ========== File Upload ==========
-  function handleFileSelect(files, task){
-    const fileArray = Array.from(files);
-    if (fileArray.length === 0) return;
-
-    const names = fileArray.map(f => f.name).join(', ');
-    if (task === 'pick') document.getElementById('pickFileName').textContent = names;
-    else document.getElementById('packFileName').textContent = names;
-
-    fileArray.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, {type: 'array'});
-          const sheet = workbook.Sheets[workbook.SheetNames[0]];
-          const rows = XLSX.utils.sheet_to_json(sheet, {header: 1});
-          parseFile(rows, task);
-        } catch (err){
-          alert(`Lỗi đọc file: ${err.message}`);
-        }
-      };
-      reader.readAsArrayBuffer(file);
+function parseFile(rows, task){
+  const employees = [];
+  if (rows.length < 2) return;
+  const headers = rows[0].map(h => String(h || '').toLowerCase().trim());
+  const emailIdx = headers.findIndex(h => h.includes('email'));
+  const nameIdx = headers.findIndex(h => h.includes('name'));
+  const effIdx = headers.findIndex(h => h.includes('efficiency') || h.includes('output') || h.includes('throughput'));
+  if (emailIdx === -1) return;
+  for (let i = 1; i < rows.length; i++){
+    const row = rows[i] || [];
+    if (!row[emailIdx]) continue;
+    employees.push({
+      email: String(row[emailIdx] || '').toLowerCase(),
+      name: nameIdx !== -1 ? String(row[nameIdx] || '') : 'N/A',
+      efficiency: effIdx !== -1 ? Number(row[effIdx]) || 0 : 0
     });
   }
+  if (task === 'pick') pickData = employees;
+  else packData = employees;
+  renderTables();
+  updateKPIs();
+}
 
-  function parseFile(rows, task){
-    const employees = [];
-    if (rows.length < 2) return;
-
-    const headers = rows[0].map(h => String(h).toLowerCase().trim());
-    const emailIdx = headers.findIndex(h => h.includes('email'));
-    const nameIdx = headers.findIndex(h => h.includes('name'));
-    const effIdx = headers.findIndex(h => h.includes('efficiency') || h.includes('throughput') || h.includes('output'));
-
-    if (emailIdx === -1) return;
-
-    for (let i = 1; i < rows.length; i++){
-      const row = rows[i];
-      if (!row[emailIdx]) continue;
-      
-      employees.push({
-        email: String(row[emailIdx]).toLowerCase(),
-        name: nameIdx !== -1 ? String(row[nameIdx]) : 'N/A',
-        efficiency: effIdx !== -1 ? Number(row[effIdx]) || 0 : 0
-      });
-    }
-
-    if (task === 'pick') pickData = employees;
-    else packData = employees;
-
-    renderTables();
-    updateKPIs();
-  }
-
-  function renderTables(){
-    const pickTbody = document.querySelector('#tblPick tbody');
-    const packTbody = document.querySelector('#tblPack tbody');
-    
-    pickTbody.innerHTML = '';
-    packTbody.innerHTML = '';
-
-    pickData.forEach(emp => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${emp.email}</td><td>${emp.name}</td><td class="num">${emp.efficiency}</td>`;
-      pickTbody.appendChild(tr);
-    });
-
-    packData.forEach(emp => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${emp.email}</td><td>${emp.name}</td><td class="num">${emp.efficiency}</td>`;
-      packTbody.appendChild(tr);
-    });
-  }
-
-  function updateKPIs(){
-    const allEmails = new Set([...pickData.map(e => e.email), ...packData.map(e => e.email)]);
-    const pickGreen = pickData.filter(e => e.efficiency >= 200).length;
-    const packGreen = packData.filter(e => e.efficiency >= 25).length;
-    const pickTotal = pickData.reduce((a, e) => a + e.efficiency, 0);
-    const packTotal = packData.reduce((a, e) => a + e.efficiency, 0);
-
-    document.getElementById('kpiTotal').textContent = allEmails.size;
-    document.getElementById('kpiPickGreen').textContent = pickGreen;
-    document.getElementById('kpiPackGreen').textContent = packGreen;
-    document.getElementById('kpiTotalOutput').textContent = (pickTotal + packTotal);
-    document.getElementById('kpiTotalFiles').textContent = pickData.length + packData.length;
-  }
-
-  function downloadTable(tableId){
-    const table = document.getElementById(tableId);
-    const rows = [];
-    table.querySelectorAll('tr').forEach(tr => {
-      const row = [];
-      tr.querySelectorAll('th, td').forEach(cell => {
-        row.push(cell.textContent.trim());
-      });
-      rows.push(row);
-    });
-
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Data');
-    XLSX.writeFile(wb, tableId + '.xlsx');
-  }
-
-  // ========== Event Listeners ==========
-  document.getElementById('pickInput').addEventListener('change', (e) => {
-    handleFileSelect(e.target.files, 'pick');
+function renderTables(){
+  const pickBody = document.querySelector('#tblPick tbody');
+  const packBody = document.querySelector('#tblPack tbody');
+  pickBody.innerHTML = '';
+  packBody.innerHTML = '';
+  pickData.forEach(e => {
+    pickBody.innerHTML += `<tr><td>${e.email}</td><td>${e.name}</td><td class="num">${e.efficiency}</td></tr>`;
   });
-
-  document.getElementById('packInput').addEventListener('change', (e) => {
-    handleFileSelect(e.target.files, 'pack');
+  packData.forEach(e => {
+    packBody.innerHTML += `<tr><td>${e.email}</td><td>${e.name}</td><td class="num">${e.efficiency}</td></tr>`;
   });
+}
 
-  ['dropPick', 'dropPack'].forEach(id => {
-    const el = document.getElementById(id);
-    el.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      el.classList.add('drag');
-    });
-    el.addEventListener('dragleave', () => {
-      el.classList.remove('drag');
-    });
-    el.addEventListener('drop', (e) => {
-      e.preventDefault();
-      el.classList.remove('drag');
-      const task = id === 'dropPick' ? 'pick' : 'pack';
-      handleFileSelect(e.dataTransfer.files, task);
-    });
-  });
+function updateKPIs(){
+  const allEmails = new Set([...pickData.map(e => e.email), ...packData.map(e => e.email)]);
+  const pickGreen = Number(document.getElementById('pickGreen').value) || 200;
+  const packGreen = Number(document.getElementById('packGreen').value) || 25;
+  const pickCount = pickData.filter(e => e.efficiency >= pickGreen).length;
+  const packCount = packData.filter(e => e.efficiency >= packGreen).length;
+  const total = pickData.reduce((a, e) => a + e.efficiency, 0) + packData.reduce((a, e) => a + e.efficiency, 0);
+  document.getElementById('kpiTotal').textContent = allEmails.size;
+  document.getElementById('kpiPickGreen').textContent = pickCount;
+  document.getElementById('kpiPackGreen').textContent = packCount;
+  document.getElementById('kpiTotalOutput').textContent = total;
+  document.getElementById('kpiTotalFiles').textContent = pickData.length + packData.length;
+}
 
-  document.getElementById('exportAllBtn').addEventListener('click', () => {
-    const wb = XLSX.utils.book_new();
-    
-    const pickRows = [['Email', 'Tên nhân viên', 'Sản lượng'], ...pickData.map(e => [e.email, e.name, e.efficiency])];
-    const packRows = [['Email', 'Tên nhân viên', 'Sản lượng'], ...packData.map(e => [e.email, e.name, e.efficiency])];
-    
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(pickRows), 'Picking');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(packRows), 'Packing');
-    
-    XLSX.writeFile(wb, 'report_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+function downloadTable(id){
+  const table = document.getElementById(id);
+  const rows = [];
+  table.querySelectorAll('tr').forEach(tr => {
+    const row = [];
+    tr.querySelectorAll('th, td').forEach(td => row.push(td.textContent.trim()));
+    rows.push(row);
   });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, id);
+  XLSX.writeFile(wb, id + '.xlsx');
+}
+
+document.getElementById('exportAllBtn').addEventListener('click', () => {
+  const wb = XLSX.utils.book_new();
+  const pickRows = [['Email', 'Name', 'Output'], ...pickData.map(e => [e.email, e.name, e.efficiency])];
+  const packRows = [['Email', 'Name', 'Output'], ...packData.map(e => [e.email, e.name, e.efficiency])];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(pickRows), 'Picking');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(packRows), 'Packing');
+  XLSX.writeFile(wb, 'report_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+});
+
+document.getElementById('pickInput').addEventListener('change', (e) => handleFiles(e.target.files, 'pick'));
+document.getElementById('packInput').addEventListener('change', (e) => handleFiles(e.target.files, 'pack'));
+
+['dropPick', 'dropPack'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('dragover', (e) => {e.preventDefault(); el.style.opacity = '0.8';});
+  el.addEventListener('dragleave', () => {el.style.opacity = '1';});
+  el.addEventListener('drop', (e) => {
+    e.preventDefault();
+    el.style.opacity = '1';
+    const task = id === 'dropPick' ? 'pick' : 'pack';
+    handleFiles(e.dataTransfer.files, task);
+  });
+});
 </script>
 </body>
 </html>
