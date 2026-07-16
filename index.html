@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root{
     --bg:#0c0e12;
@@ -20,10 +21,13 @@
     --pick:#4f9eff;
     --pack:#ff8a3d;
     --red:#e5484d;
+    --yellow:#f0a93a;
     --green:#2fbf71;
-    --mono:'JetBrains Mono','DejaVu Sans Mono',monospace;
-    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-    --display:'Oswald',var(--sans);
+    --row-line:#1c2027;
+    --mono:'JetBrains Mono','DejaVu Sans Mono','SFMono-Regular','Menlo','Consolas',ui-monospace,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    --display:'Oswald','Segoe UI Condensed',var(--sans);
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.55);
   }
   html[data-theme="light"]{
     --bg:#f4f5f7;
@@ -33,92 +37,141 @@
     --text:#161a20;
     --muted:#5c6572;
     --dim:#939aa6;
+    --row-line:#edeff2;
+    --shadow:0 1px 2px rgba(20,25,35,.06), 0 10px 24px -14px rgba(20,25,35,.16);
   }
   *{box-sizing:border-box;}
   body{
     margin:0;
-    background:var(--bg);
+    background:
+      radial-gradient(1200px 600px at 15% -10%, color-mix(in srgb, var(--pick) 10%, transparent) 0%, transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, color-mix(in srgb, var(--pack) 10%, transparent) 0%, transparent 55%),
+      var(--bg);
     color:var(--text);
     font-family:var(--sans);
     min-height:100vh;
-    padding:20px 24px;
+    padding:20px 24px 60px;
     transition:background .2s ease,color .2s ease;
   }
   .wrap{max-width:1320px;margin:0 auto;}
   .topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--line);}
-  h1{margin:0;font-family:var(--display);font-size:29px;font-weight:600;text-transform:uppercase;}
+  .brand-eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;color:var(--pick);text-transform:uppercase;margin-bottom:6px;font-weight:600;}
+  h1{margin:0;font-family:var(--display);font-size:29px;font-weight:600;letter-spacing:.01em;text-transform:uppercase;}
   .clock{font-family:var(--mono);font-size:13px;color:var(--muted);text-align:right;}
-  .clock b{color:var(--text);font-size:15px;}
-  .pulse-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:6px;animation:pulse 2s infinite;}
-  @keyframes pulse{0%{opacity:1;}70%{opacity:0;}100%{opacity:0;}}
+  .clock b{color:var(--text);font-size:15px;letter-spacing:.03em;}
+  .pulse-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:6px;box-shadow:0 0 0 0 rgba(47,191,113,.6);animation:pulse 2s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(47,191,113,.5);}70%{box-shadow:0 0 0 7px rgba(47,191,113,0);}100%{box-shadow:0 0 0 0 rgba(47,191,113,0);}}
   .head-actions{display:flex;gap:14px;align-items:center;justify-content:flex-end;margin-top:6px;flex-wrap:wrap;}
   .theme-toggle{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--dim);cursor:pointer;background:var(--panel-2);border:1px solid var(--line);border-radius:20px;padding:4px 10px;}
   .theme-toggle:hover{border-color:var(--muted);}
-  .config-toggle{font-size:11px;color:var(--dim);cursor:pointer;text-decoration:underline;}
+  .config-toggle{font-size:11px;color:var(--dim);cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
   .feeds{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
-  .feed{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;}
+  .feed{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;box-shadow:var(--shadow);cursor:pointer;transition:border-color .15s ease;}
   .feed:hover{border-color:var(--muted);}
-  .feed::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--pick);}
+  .feed::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;}
+  .feed.pick::before{background:var(--pick);}
   .feed.pack::before{background:var(--pack);}
-  .feed-icon{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:13px;background:rgba(79,158,255,.12);color:var(--pick);flex-shrink:0;}
+  .feed-icon{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:13px;flex-shrink:0;}
+  .feed.pick .feed-icon{background:rgba(79,158,255,.12);color:var(--pick);}
   .feed.pack .feed-icon{background:rgba(255,138,61,.12);color:var(--pack);}
-  .feed-body{flex:1;}
+  .feed-body{flex:1;min-width:0;}
   .feed-title{font-size:13px;font-weight:600;color:var(--text);}
-  .feed-sub{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:2px;}
+  .feed-sub{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .feed-drop{font-size:11px;color:var(--dim);margin-top:3px;}
   .feed input{display:none;}
-  .feed-btn{font-family:var(--sans);font-size:12px;font-weight:600;color:var(--text);background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:8px 12px;cursor:pointer;}
+  .feed-btn{font-family:var(--sans);font-size:12px;font-weight:600;color:var(--text);background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:8px 12px;cursor:pointer;white-space:nowrap;transition:.15s;}
   .feed-btn:hover{border-color:var(--muted);}
+  .feed-reset{font-size:15px;color:var(--dim);flex-shrink:0;padding:4px 6px;border-radius:6px;cursor:pointer;}
+  .feed-reset:hover{color:var(--red);background:rgba(229,72,77,.12);}
+  .feed.drag{outline:2px dashed var(--muted);outline-offset:-6px;}
   .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:22px;}
-  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
-  .kpi-label{font-size:10.5px;text-transform:uppercase;color:var(--dim);font-weight:600;}
-  .kpi-val{font-family:var(--mono);font-size:26px;font-weight:700;margin-top:6px;}
-  .kpi-val.g{color:var(--green);}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px;}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;box-shadow:var(--shadow);transition:transform .15s ease,border-color .15s ease;}
+  .kpi:hover{transform:translateY(-1px);border-color:var(--muted);}
+  .kpi-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--dim);font-weight:600;}
+  .kpi-val{font-family:var(--mono);font-size:26px;font-weight:700;margin-top:6px;letter-spacing:-.02em;}
+  .kpi-sub{font-size:11px;color:var(--muted);margin-top:3px;}
+  .kpi-val.g{color:var(--green);} .kpi-val.y{color:var(--yellow);} .kpi-val.r{color:var(--red);}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;box-shadow:var(--shadow);margin-bottom:16px;}
   .panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
-  .panel-title{font-family:var(--display);font-size:14px;font-weight:600;text-transform:uppercase;}
+  .panel-title{font-family:var(--display);font-size:14px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;}
+  .panel-note{font-size:11px;color:var(--dim);font-family:var(--mono);}
   .rtable{width:100%;border-collapse:collapse;font-size:13px;}
-  .rtable th{text-align:left;font-size:11px;text-transform:uppercase;color:var(--dim);font-weight:600;padding:7px 4px;border-bottom:1px solid var(--line);}
-  .rtable td{padding:9px 4px;border-bottom:1px solid var(--line);color:var(--text);}
-  .rtable td.num{text-align:right;font-family:var(--mono);}
-  .table-scroll{max-height:420px;overflow-y:auto;border-radius:8px;}
-  .dl-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--muted);background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:6px 10px;cursor:pointer;}
+  .rtable th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--dim);font-weight:600;padding:7px 4px;border-bottom:1px solid var(--line);}
+  .rtable td{padding:9px 4px;border-bottom:1px solid var(--row-line);color:var(--text);}
+  .rtable td.num, .rtable th.num{text-align:right;font-family:var(--mono);}
+  .rtable tr.total td{font-weight:700;color:var(--text);border-top:1px solid var(--line);}
+  .rtable tr.grand-total td{font-weight:700;color:var(--bg);background:var(--pick);border-top:1px solid var(--line);}
+  html[data-theme="light"] .rtable tr.grand-total td{color:#fff;}
+  .rtable tr.sub td{color:var(--muted);}
+  .dl-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.03em;color:var(--muted);background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:5px 9px;cursor:pointer;text-transform:uppercase;transition:.15s;}
   .dl-btn:hover{color:var(--text);border-color:var(--muted);}
-  .dl-btn-main{font-family:var(--mono);font-size:11.5px;font-weight:700;color:var(--bg);background:var(--green);border:1px solid var(--green);border-radius:8px;padding:9px 16px;cursor:pointer;}
+  .dl-btn svg{width:11px;height:11px;flex-shrink:0;}
+  .dl-btn-main{font-family:var(--mono);font-size:11.5px;font-weight:700;letter-spacing:.03em;color:var(--bg);background:var(--green);border:1px solid var(--green);border-radius:8px;padding:9px 16px;cursor:pointer;text-transform:uppercase;display:inline-flex;align-items:center;gap:8px;transition:filter .15s;}
   .dl-btn-main:hover{filter:brightness(1.08);}
+  .dl-btn-main svg{width:13px;height:13px;}
+  .rtable-note{font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.6;}
+  .table-scroll{max-height:420px;overflow-y:auto;overflow-x:auto;border-radius:8px;}
+  .table-scroll.short{max-height:520px;}
+  .table-scroll.tall{max-height:900px;}
+  .empty{text-align:center;color:var(--dim);padding:40px 0;font-size:12.5px;}
   .config-panel{display:none;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:20px;}
   .config-panel.open{display:block;}
+  .config-section{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--line);}
+  .config-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+  .config-section-title{font-size:11.5px;font-weight:700;color:var(--text);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em;}
   .config-row{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
-  .config-row label{font-size:12px;color:var(--muted);flex-shrink:0;}
-  .config-row input.small{max-width:110px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:8px 10px;font-size:12px;}
-  .footer-note{margin-top:26px;font-size:11px;color:var(--dim);text-align:center;}
-  @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr);}.feeds{grid-template-columns:1fr;}}
+  .config-row label{font-size:12px;color:var(--muted);width:220px;flex-shrink:0;}
+  .config-row input{flex:1;min-width:120px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:8px 10px;font-size:12px;font-family:var(--mono);}
+  .config-row input.small{max-width:110px;flex:none;}
+  .config-row button{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;}
+  .config-row button:hover{border-color:var(--muted);}
+  .config-hint{font-size:11px;color:var(--dim);line-height:1.6;margin-top:4px;}
+  .footer-note{margin-top:26px;font-size:11px;color:var(--dim);text-align:center;line-height:1.7;}
+  @media(max-width:900px){
+    .kpis{grid-template-columns:repeat(2,1fr);}
+    .feeds{grid-template-columns:1fr;}
+    .topbar{flex-direction:column;align-items:flex-start;}
+    .clock{text-align:left;}
+    .head-actions{justify-content:flex-start;}
+  }
+  @media(max-width:520px){
+    body{padding:14px 12px 40px;}
+    h1{font-size:22px;}
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="topbar">
     <div>
-      <h1>📊 Pick / Pack Dashboard</h1>
+      <div class="brand-eyebrow">WMS · Ops Floor Monitor</div>
+      <h1>Bảng điều khiển Năng suất — Pick / Pack</h1>
     </div>
     <div class="clock">
       <div><span class="pulse-dot"></span><b id="clockTime">--:--:--</b></div>
       <div id="clockDate">—</div>
       <div class="head-actions">
-        <button class="dl-btn-main" id="exportAllBtn">📥 Xuất Excel</button>
-        <span class="theme-toggle" id="themeToggle">🌙 Dark</span>
+        <button class="dl-btn-main" id="exportAllBtn" title="Xuất toàn bộ báo cáo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Xuất báo cáo
+        </button>
+        <span class="theme-toggle" id="themeToggle">🌙 <span id="themeLabel">Dark</span></span>
         <span class="config-toggle" id="configToggle">⚙ Cấu hình</span>
       </div>
     </div>
   </div>
 
   <div class="config-panel" id="configPanel">
-    <div class="config-row">
-      <label>Picking Ngưỡng Green:</label>
-      <input type="number" id="pickGreen" class="small" value="200">
-    </div>
-    <div class="config-row">
-      <label>Packing Ngưỡng Green:</label>
-      <input type="number" id="packGreen" class="small" value="25">
+    <div class="config-section">
+      <div class="config-section-title">Ngưỡng RAG</div>
+      <div class="config-row">
+        <label>Picking — Đỏ dưới / Xanh từ</label>
+        <input type="number" id="pickRed" class="small" value="170"> – <input type="number" id="pickGreen" class="small" value="200">
+      </div>
+      <div class="config-row">
+        <label>Packing — Đỏ dưới / Xanh từ</label>
+        <input type="number" id="packRed" class="small" value="16"> – <input type="number" id="packGreen" class="small" value="25">
+      </div>
     </div>
   </div>
 
@@ -126,40 +179,42 @@
     <label class="feed pick" id="dropPick">
       <div class="feed-icon">PK</div>
       <div class="feed-body">
-        <div class="feed-title">Picking</div>
+        <div class="feed-title">Picking — nguồn dữ liệu</div>
         <div class="feed-sub" id="pickFileName">Chưa có file</div>
+        <div class="feed-drop">Kéo–thả file .xlsx/.csv vào đây hoặc bấm để chọn</div>
       </div>
-      <span class="feed-btn">Chọn file</span>
+      <span class="feed-btn">Tải file</span>
       <input type="file" id="pickInput" accept=".xlsx,.xls,.csv" multiple>
     </label>
     <label class="feed pack" id="dropPack">
       <div class="feed-icon">PA</div>
       <div class="feed-body">
-        <div class="feed-title">Packing</div>
+        <div class="feed-title">Packing — nguồn dữ liệu</div>
         <div class="feed-sub" id="packFileName">Chưa có file</div>
+        <div class="feed-drop">Kéo–thả file .xlsx/.csv vào đây hoặc bấm để chọn</div>
       </div>
-      <span class="feed-btn">Chọn file</span>
+      <span class="feed-btn">Tải file</span>
       <input type="file" id="packInput" accept=".xlsx,.xls,.csv" multiple>
     </label>
   </div>
 
   <div class="kpis" id="kpiRow">
     <div class="kpi"><div class="kpi-label">Tổng nhân sự</div><div class="kpi-val" id="kpiTotal">—</div></div>
-    <div class="kpi"><div class="kpi-label">Pick Green</div><div class="kpi-val g" id="kpiPickGreen">—</div></div>
-    <div class="kpi"><div class="kpi-label">Pack Green</div><div class="kpi-val g" id="kpiPackGreen">—</div></div>
-    <div class="kpi"><div class="kpi-label">Tổng Output</div><div class="kpi-val" id="kpiTotalOutput">—</div></div>
-    <div class="kpi"><div class="kpi-label">Files</div><div class="kpi-val" id="kpiTotalFiles">—</div></div>
+    <div class="kpi"><div class="kpi-label">Pick — Green</div><div class="kpi-val g" id="kpiPickGreen">—</div></div>
+    <div class="kpi"><div class="kpi-label">Pack — Green</div><div class="kpi-val g" id="kpiPackGreen">—</div></div>
+    <div class="kpi"><div class="kpi-label">Tổng sản lượng</div><div class="kpi-val" id="kpiTotalOutput">—</div></div>
+    <div class="kpi"><div class="kpi-label">Tổng File</div><div class="kpi-val" id="kpiTotalFiles">—</div></div>
   </div>
 
   <div class="panel">
     <div class="panel-head">
-      <div class="panel-title">📋 Picking</div>
-      <button class="dl-btn" onclick="downloadTable('tblPick')">📥 Download</button>
+      <div class="panel-title">📋 Danh sách Picking</div>
+      <button class="dl-btn" onclick="downloadTable('tblPick')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Tải xuống</button>
     </div>
-    <div class="table-scroll">
+    <div class="table-scroll short">
       <table class="rtable" id="tblPick">
         <thead>
-          <tr><th>Email</th><th>Name</th><th class="num">Output</th></tr>
+          <tr><th>Email</th><th>Tên nhân viên</th><th class="num">Sản lượng</th></tr>
         </thead>
         <tbody></tbody>
       </table>
@@ -168,20 +223,22 @@
 
   <div class="panel">
     <div class="panel-head">
-      <div class="panel-title">📋 Packing</div>
-      <button class="dl-btn" onclick="downloadTable('tblPack')">📥 Download</button>
+      <div class="panel-title">📋 Danh sách Packing</div>
+      <button class="dl-btn" onclick="downloadTable('tblPack')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Tải xuống</button>
     </div>
-    <div class="table-scroll">
+    <div class="table-scroll short">
       <table class="rtable" id="tblPack">
         <thead>
-          <tr><th>Email</th><th>Name</th><th class="num">Output</th></tr>
+          <tr><th>Email</th><th>Tên nhân viên</th><th class="num">Sản lượng</th></tr>
         </thead>
         <tbody></tbody>
       </table>
     </div>
   </div>
 
-  <div class="footer-note">Dashboard v1.0 • Data processed locally in browser</div>
+  <div class="footer-note">
+    Dashboard v1.0 • Dữ liệu xử lý trên trình duyệt • GitHub Pages
+  </div>
 </div>
 
 <script>
@@ -228,7 +285,7 @@ function handleFiles(files, task){
         const rows = XLSX.utils.sheet_to_json(sheet, {header: 1});
         parseFile(rows, task);
       } catch (err){
-        alert('Error: ' + err.message);
+        alert('Lỗi: ' + err.message);
       }
     };
     reader.readAsArrayBuffer(file);
@@ -241,8 +298,10 @@ function parseFile(rows, task){
   const headers = rows[0].map(h => String(h || '').toLowerCase().trim());
   const emailIdx = headers.findIndex(h => h.includes('email'));
   const nameIdx = headers.findIndex(h => h.includes('name'));
-  const effIdx = headers.findIndex(h => h.includes('efficiency') || h.includes('output') || h.includes('throughput'));
+  const effIdx = headers.findIndex(h => h.includes('efficiency') || h.includes('output') || h.includes('throughput') || h.includes('sản lượng'));
+  
   if (emailIdx === -1) return;
+  
   for (let i = 1; i < rows.length; i++){
     const row = rows[i] || [];
     if (!row[emailIdx]) continue;
@@ -252,8 +311,10 @@ function parseFile(rows, task){
       efficiency: effIdx !== -1 ? Number(row[effIdx]) || 0 : 0
     });
   }
+  
   if (task === 'pick') pickData = employees;
   else packData = employees;
+  
   renderTables();
   updateKPIs();
 }
@@ -261,11 +322,14 @@ function parseFile(rows, task){
 function renderTables(){
   const pickBody = document.querySelector('#tblPick tbody');
   const packBody = document.querySelector('#tblPack tbody');
+  
   pickBody.innerHTML = '';
   packBody.innerHTML = '';
+  
   pickData.forEach(e => {
     pickBody.innerHTML += `<tr><td>${e.email}</td><td>${e.name}</td><td class="num">${e.efficiency}</td></tr>`;
   });
+  
   packData.forEach(e => {
     packBody.innerHTML += `<tr><td>${e.email}</td><td>${e.name}</td><td class="num">${e.efficiency}</td></tr>`;
   });
@@ -278,11 +342,12 @@ function updateKPIs(){
   const pickCount = pickData.filter(e => e.efficiency >= pickGreen).length;
   const packCount = packData.filter(e => e.efficiency >= packGreen).length;
   const total = pickData.reduce((a, e) => a + e.efficiency, 0) + packData.reduce((a, e) => a + e.efficiency, 0);
-  document.getElementById('kpiTotal').textContent = allEmails.size;
-  document.getElementById('kpiPickGreen').textContent = pickCount;
-  document.getElementById('kpiPackGreen').textContent = packCount;
-  document.getElementById('kpiTotalOutput').textContent = total;
-  document.getElementById('kpiTotalFiles').textContent = pickData.length + packData.length;
+  
+  document.getElementById('kpiTotal').textContent = allEmails.size || '—';
+  document.getElementById('kpiPickGreen').textContent = pickCount || '—';
+  document.getElementById('kpiPackGreen').textContent = packCount || '—';
+  document.getElementById('kpiTotalOutput').textContent = total || '—';
+  document.getElementById('kpiTotalFiles').textContent = (pickData.length + packData.length) || '—';
 }
 
 function downloadTable(id){
@@ -301,8 +366,8 @@ function downloadTable(id){
 
 document.getElementById('exportAllBtn').addEventListener('click', () => {
   const wb = XLSX.utils.book_new();
-  const pickRows = [['Email', 'Name', 'Output'], ...pickData.map(e => [e.email, e.name, e.efficiency])];
-  const packRows = [['Email', 'Name', 'Output'], ...packData.map(e => [e.email, e.name, e.efficiency])];
+  const pickRows = [['Email', 'Tên nhân viên', 'Sản lượng'], ...pickData.map(e => [e.email, e.name, e.efficiency])];
+  const packRows = [['Email', 'Tên nhân viên', 'Sản lượng'], ...packData.map(e => [e.email, e.name, e.efficiency])];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(pickRows), 'Picking');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(packRows), 'Packing');
   XLSX.writeFile(wb, 'report_' + new Date().toISOString().slice(0, 10) + '.xlsx');
@@ -313,11 +378,11 @@ document.getElementById('packInput').addEventListener('change', (e) => handleFil
 
 ['dropPick', 'dropPack'].forEach(id => {
   const el = document.getElementById(id);
-  el.addEventListener('dragover', (e) => {e.preventDefault(); el.style.opacity = '0.8';});
-  el.addEventListener('dragleave', () => {el.style.opacity = '1';});
+  el.addEventListener('dragover', (e) => {e.preventDefault(); el.classList.add('drag');});
+  el.addEventListener('dragleave', () => {el.classList.remove('drag');});
   el.addEventListener('drop', (e) => {
     e.preventDefault();
-    el.style.opacity = '1';
+    el.classList.remove('drag');
     const task = id === 'dropPick' ? 'pick' : 'pack';
     handleFiles(e.dataTransfer.files, task);
   });
