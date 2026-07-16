@@ -725,134 +725,65 @@
       <div class="panel-title">🔧 Cài đặt Google Apps Script (để lưu &amp; đồng bộ qua Drive)</div>
       <button type="button" class="dl-btn" id="copyGasCode" onclick="navigator.clipboard.writeText(document.getElementById('gasCode').innerText); this.textContent='✓ Đã copy';">📋 Copy code</button>
     </div>
-    <div class="rtable-note">Tạo project mới ở <code>script.google.com</code>, dán đè toàn bộ code dưới đây, thay <code>FOLDER_ID</code> (2 chỗ) bằng ID folder Drive của bạn, Deploy → New deployment → Web app (Execute as: Me · Who has access: Anyone), rồi dán URL vừa deploy vào ô "Apps Script Web App URL" ở <code>⚙ Cấu hình</code>. <b>Nếu đã deploy bản cũ trước đây:</b> dán đè code này rồi Deploy → Manage deployments → sửa (bút chì) → Version: New version → Deploy, để giữ nguyên URL cũ (không cần đổi URL, không cần cấu hình lại).</div>
-    <pre id="gasCode" style="background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:11.5px;line-height:1.6;color:var(--text);margin-top:10px;">function doPost(e) {
-  // Nếu bạn bấm nút "Run" trong editor để test, e sẽ là undefined —
-  // đây không phải lỗi, chỉ là doPost cần được gọi bằng 1 request POST thật.
-  // Dùng hàm testDoPost() bên dưới để test tay, hoặc deploy rồi tải file thử trên dashboard.
-  if (!e || !e.postData) {
-    return ContentService.createTextOutput(JSON.stringify({status:'error', message:'Không có POST data — hãy gọi qua testDoPost() hoặc gửi request POST thật, đừng bấm Run trực tiếp trên doPost.'}))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-  var FOLDER_ID = 'DÁN_FOLDER_ID_VÀO_ĐÂY';
-  var folder = DriveApp.getFolderById(FOLDER_ID);
-  var data = JSON.parse(e.postData.contents);
-  var content = JSON.stringify(data, null, 2);
+    <div class="rtable-note">Tạo project mới ở <code>script.google.com</code>, dán đè toàn bộ code dưới đây, Deploy → New deployment → Web app (Execute as: Me · Who has access: Anyone), rồi dán URL vừa deploy vào ô "Apps Script Web App URL" ở <code>⚙ Cấu hình</code>.</div>
+    <pre id="gasCode" style="background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:11.5px;line-height:1.6;color:var(--text);margin-top:10px;">const FOLDER_NAME = 'WMS_Dashboard_Data';
 
-  // 1) Lưu lịch sử: mỗi lần tải là 1 file riêng, không tìm/đè file cũ -> lưu lịch sử không giới hạn.
-  var safeTime = (data.timeStr || '00-00-00').replace(/:/g, '-');
-  var fileName = 'productivity_' + data.task + '_' + data.dateStr + '_' + safeTime + '.json';
-  folder.createFile(fileName, content, MimeType.PLAIN_TEXT);
-
-  // 2) Ghi đè "bản mới nhất dùng chung" — để người khác mở link (hoặc bấm Đồng bộ) là thấy ngay, không cần gửi file qua lại.
-  var latestName = 'latest_' + data.task + '.json';
-  var existing = folder.getFilesByName(latestName);
-  if (existing.hasNext()) {
-    existing.next().setContent(content);
-  } else {
-    folder.createFile(latestName, content, MimeType.PLAIN_TEXT);
-  }
-
-  return ContentService.createTextOutput(JSON.stringify({status:'ok', file:fileName}))
-    .setMimeType(ContentService.MimeType.JSON);
+function getFolder_(){
+  const it = DriveApp.getFoldersByName(FOLDER_NAME);
+  return it.hasNext() ? it.next() : DriveApp.createFolder(FOLDER_NAME);
+}
+function json_(obj){
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 
-// Cho phép dashboard xem lại danh sách + nội dung các file đã lưu, và đồng bộ "bản mới nhất dùng chung".
-// Hỗ trợ 2 kiểu gọi:
-//   - GET .../exec?action=...            → trả JSON thẳng (gọi trực tiếp qua thanh địa chỉ trình duyệt vẫn đọc được)
-//   - GET .../exec?action=...&callback=X → trả JSONP (bọc trong hàm X(...)) — BẮT BUỘC dùng kiểu này khi
-//     gọi từ JavaScript trên 1 domain khác (VD dashboard trên github.io gọi sang script.google.com), vì
-//     Apps Script không luôn gửi kèm header CORS để fetch() đọc được — JSONP né hoàn toàn vấn đề này vì
-//     tải qua thẻ <script>, không bị trình duyệt áp CORS. Dashboard đã tự dùng đúng kiểu callback này.
-//
-// GET .../exec?action=list                → liệt kê tất cả file lịch sử (đọc từ tên file, không mở từng file nên nhanh)
-// GET .../exec?action=get&id=<fileId>     → trả về nguyên nội dung JSON của 1 file lịch sử (data thô + summary)
-// GET .../exec?action=latest              → trả về bản mới nhất dùng chung của CẢ Pick lẫn Pack ({pick:{...}, pack:{...}})
-// GET .../exec?action=latest&task=pick    → chỉ trả về bản mới nhất của riêng Pick (hoặc pack)
-function doGet(e) {
-  var callback = e && e.parameter && e.parameter.callback;
-  var result;
+function doPost(e){
+  const data = JSON.parse(e.postData.contents);
+  const folder = getFolder_();
+  const id = data.task + '_' + Date.parse(data.generatedAt);
+  const record = { id, dateStr:data.dateStr, timeStr:data.timeStr, task:data.task, fileName:data.fileName, employees:data.employees };
+  folder.createFile('hist_' + id + '.json', JSON.stringify(record), MimeType.PLAIN_TEXT);
+
+  const latestName = 'latest_' + data.task + '.json';
+  const existing = folder.getFilesByName(latestName);
+  if (existing.hasNext()) existing.next().setTrashed(true);
+  folder.createFile(latestName, JSON.stringify({ fileName:data.fileName, fileNames:data.fileNames, employees:data.employees }), MimeType.PLAIN_TEXT);
+
+  return json_({ status:'ok' });
+}
+
+function doGet(e){
+  const action = e.parameter.action;
+  const folder = getFolder_();
   try {
-    var FOLDER_ID = 'DÁN_FOLDER_ID_VÀO_ĐÂY';
-    var folder = DriveApp.getFolderById(FOLDER_ID);
-    var action = (e && e.parameter && e.parameter.action) || 'list';
-
-    if (action === 'latest') {
-      var task = e.parameter.task;
-      var tasks = task ? [task] : ['pick', 'pack'];
-      var out = {};
-      for (var i = 0; i < tasks.length; i++) {
-        var t = tasks[i];
-        var files = folder.getFilesByName('latest_' + t + '.json');
-        out[t] = files.hasNext() ? JSON.parse(files.next().getBlob().getDataAsString()) : null;
-      }
-      result = { status: 'ok', data: out };
-
-    } else if (action === 'get') {
-      var id = e.parameter.id;
-      if (!id) {
-        result = { status: 'error', message: 'Thiếu tham số id.' };
-      } else {
-        var file = DriveApp.getFileById(id);
-        // trả thẳng nội dung JSON gốc của file (đã có sẵn cấu trúc {dateStr, timeStr, task, fileName, employees, summary})
-        result = JSON.parse(file.getBlob().getDataAsString());
-      }
-
-    } else {
-      // action === 'list': chỉ đọc TÊN file lịch sử (không mở nội dung) để nhanh kể cả khi có rất nhiều file — bỏ qua latest_*.json.
-      var files2 = folder.getFilesByType(MimeType.PLAIN_TEXT);
-      var out2 = [];
-      while (files2.hasNext()) {
-        var f = files2.next();
-        var name = f.getName();
-        var m = /^productivity_(pick|pack)_(\d{4}-\d{2}-\d{2})_([\d-]+)\.json$/.exec(name);
-        if (!m) continue; // bỏ qua latest_*.json và file không đúng định dạng do doPost tạo ra
-        out2.push({ id: f.getId(), fileName: name, task: m[1], dateStr: m[2], timeStr: m[3].replace(/-/g, ':') });
-      }
-      result = { status: 'ok', files: out2 };
+    if (action === 'latest'){
+      const data = {};
+      ['pick','pack'].forEach(task=>{
+        const it = folder.getFilesByName('latest_' + task + '.json');
+        if (it.hasNext()) data[task] = JSON.parse(it.next().getBlob().getDataAsString());
+      });
+      return json_({ status:'ok', data });
     }
-  } catch (err) {
-    result = { status: 'error', message: String(err) };
-  }
-
-  var text = JSON.stringify(result);
-  if (callback) {
-    return ContentService.createTextOutput(callback + '(' + text + ')').setMimeType(ContentService.MimeType.JAVASCRIPT);
-  }
-  return ContentService.createTextOutput(text).setMimeType(ContentService.MimeType.JSON);
-}
-
-// Chọn hàm này trong dropdown "Run" của editor rồi bấm Run để test tay
-// (giả lập 1 request POST) mà không cần deploy hay đụng tới dashboard.
-function testDoPost() {
-  var fakeEvent = {
-    postData: {
-      contents: JSON.stringify({
-        dateStr: '2026-01-01',
-        timeStr: '10:00:00',
-        task: 'pick',
-        fileName: 'test.xlsx',
-        fileNames: ['test.xlsx'],
-        generatedAt: new Date().toISOString(),
-        employees: [{ email:'a@test.com', staffName:'Test User', stationId:'', stationName:'', captain:'', efficiency:210, accumulated:210, activeHours:3, chron:new Array(24).fill(0) }],
-        summary: { note: 'du lieu test' }
-      })
+    if (action === 'list'){
+      const files = [];
+      const fit = folder.getFiles();
+      while (fit.hasNext()){
+        const f = fit.next();
+        if (f.getName().indexOf('hist_') === 0){
+          const rec = JSON.parse(f.getBlob().getDataAsString());
+          files.push({ id:rec.id, dateStr:rec.dateStr, timeStr:rec.timeStr, task:rec.task, fileName:rec.fileName });
+        }
+      }
+      return json_({ status:'ok', files });
     }
-  };
-  var result = doPost(fakeEvent);
-  Logger.log(result.getContent());
-}
-
-// Chọn hàm này để test tay việc liệt kê danh sách file (giả lập GET ?action=list)
-function testDoGet() {
-  var result = doGet({ parameter: {} });
-  Logger.log(result.getContent());
-}
-
-// Chọn hàm này để test tay việc đồng bộ "bản mới nhất dùng chung" (giả lập GET ?action=latest) — chạy sau testDoPost() để có dữ liệu.
-function testDoGetLatest() {
-  var result = doGet({ parameter: { action: 'latest' } });
-  Logger.log(result.getContent());
+    if (action === 'get'){
+      const fit = folder.getFilesByName('hist_' + e.parameter.id + '.json');
+      if (!fit.hasNext()) return json_({ status:'error', message:'Không tìm thấy' });
+      return json_(JSON.parse(fit.next().getBlob().getDataAsString()));
+    }
+    return json_({ status:'error', message:'Thiếu action' });
+  } catch(err){
+    return json_({ status:'error', message:String(err) });
+  }
 }</pre>
   </div>
 
@@ -1768,7 +1699,7 @@ document.getElementById('themeToggle').addEventListener('click', async ()=>{
 // ---------- config (rules + Drive webhook) ----------
 // URL Apps Script Web App dùng chung mặc định cho toàn team — ai mở link cũng tự có sẵn,
 // không cần tự dán vào Cấu hình. Vẫn có thể đổi/xoá thủ công trong ⚙ Cấu hình nếu cần dùng URL khác.
-const DEFAULT_DRIVE_URL = 'https://script.google.com/macros/s/AKfycbyivLFIBo2fz9f0EjZtz6yQAkxSW_gJ0bfJwFj4oFJEHHt0f-DG8c0srgUpXyNQXWMy/exec';
+const DEFAULT_DRIVE_URL = 'https://script.google.com/a/macros/spxexpress.com/s/AKfycby2VMU4FAQ4pZKHBI3WzYsqVIzni6vsdY6qo1CYQpeHaSadr7y1L_KpUwF-Ki--svVL7Q/exec';
 
 let config = { driveUrl: DEFAULT_DRIVE_URL, autoSyncDrive: true, historyRetentionDays: 0, thresh: JSON.parse(JSON.stringify(THRESH)), hourTarget: {...HOUR_TARGET} };
 async function loadConfig(){
@@ -1780,14 +1711,6 @@ async function loadConfig(){
     }
   } catch(e){ /* none saved yet */ }
   if (!config.driveUrl) config.driveUrl = DEFAULT_DRIVE_URL; // đảm bảo luôn có URL dùng chung, kể cả nếu từng lưu rỗng trước đó
-  // Di chuyển tự động: URL cũ dạng "/a/macros/<domain>/s/..." bị Google ép đăng nhập đúng domain mới
-  // truy cập được (đây là nguyên nhân gây lỗi "không lưu khi share sang Chrome khác"). Nếu trình duyệt
-  // này còn đang lưu URL cũ đó, tự chuyển sang URL "/macros/s/..." mới (không ép đăng nhập) — người dùng
-  // không cần vào lại ⚙ Cấu hình để tự sửa tay.
-  if (config.driveUrl && /\/a\/macros\//.test(config.driveUrl)) {
-    config.driveUrl = DEFAULT_DRIVE_URL;
-    try { await storage.set('config', JSON.stringify(config), false); } catch(e){}
-  }
   Object.assign(THRESH.pick, config.thresh.pick);
   Object.assign(THRESH.pack, config.thresh.pack);
   Object.assign(HOUR_TARGET, config.hourTarget);
@@ -1830,39 +1753,23 @@ document.getElementById('saveConfig').addEventListener('click', saveConfig);
 
 // ---------- đồng bộ dữ liệu chung (bản mới nhất) từ Google Drive ----------
 // Cho phép nhiều người mở cùng 1 link: ai tải file lên (pushToDrive) → người khác mở link/bấm đồng bộ sẽ thấy đúng bản đó.
-// ---------- JSONP: gọi Apps Script qua thẻ <script> thay vì fetch() ----------
-// Lý do: Apps Script Web App không luôn gửi kèm header CORS cho phép đọc phản hồi qua fetch() từ 1 domain
-// khác (VD trang trên github.io gọi sang script.google.com) — dù gõ thẳng URL vào trình duyệt vẫn đọc được
-// bình thường (không bị CORS chi phối). JSONP né hoàn toàn vấn đề này vì tải qua thẻ <script>, không qua
-// cơ chế fetch/XHR nên trình duyệt không áp CORS. Cần doGet ở Apps Script hỗ trợ tham số &callback=...
-// (đã cập nhật sẵn trong code mẫu ở cuối trang).
-function jsonpRequest(url, timeoutMs){
-  timeoutMs = timeoutMs || 15000;
-  return new Promise((resolve, reject)=>{
-    const cbName = 'jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random()*1e6);
-    let done = false;
-    const script = document.createElement('script');
-    const timer = setTimeout(()=>{
-      if (done) return; done = true;
-      cleanup();
-      reject(new Error('Hết thời gian chờ phản hồi từ Apps Script (JSONP timeout sau ' + (timeoutMs/1000) + 's) — kiểm tra lại URL hoặc script đã Deploy đúng chưa.'));
-    }, timeoutMs);
-    function cleanup(){ clearTimeout(timer); delete window[cbName]; script.remove(); }
-    window[cbName] = (data)=>{ if (done) return; done = true; cleanup(); resolve(data); };
-    script.onerror = ()=>{ if (done) return; done = true; cleanup(); reject(new Error('Không tải được script từ Apps Script — kiểm tra lại URL có đúng và đã Deploy chưa.')); };
-    const sep = url.includes('?') ? '&' : '?';
-    script.src = url + sep + 'callback=' + cbName;
-    document.head.appendChild(script);
-  });
-}
-
 async function loadFromDriveLatest(silent){
   if (!config.driveUrl) return;
   const btn = document.getElementById('syncDriveBtn');
   const el = document.getElementById('syncDriveStatus');
   if (btn) btn.style.opacity = '0.6';
   try {
-    const json = await jsonpRequest(config.driveUrl + '?action=latest');
+    const res = await fetch(config.driveUrl + '?action=latest', { method:'GET' });
+    let json;
+    try {
+      json = await res.json();
+    } catch(parseErr){
+      // Không phải JSON — thường do bị redirect ra trang đăng nhập Google (Who has access không phải "Anyone")
+      // hoặc URL sai/deployment đã bị xoá. Log nguyên response text ra console để dò tiếp.
+      const text = await res.clone().text().catch(()=>'(không đọc được nội dung)');
+      console.error('[Drive sync] Phản hồi không phải JSON (HTTP ' + res.status + '). Nội dung nhận được:', text.slice(0,500));
+      throw new Error('Phản hồi không phải JSON (HTTP ' + res.status + ') — có thể do quyền truy cập deployment chưa để "Anyone", hoặc URL sai. Xem Console (F12) để thấy nội dung thật.');
+    }
     if (json.status !== 'ok' || !json.data){ throw new Error(json.message || 'Apps Script trả về status khác "ok" — xem Console.'); }
     let changed = false;
     ['pick','pack'].forEach(task=>{
@@ -1880,11 +1787,18 @@ async function loadFromDriveLatest(silent){
     }
     if (el){ el.textContent = changed ? 'Đã đồng bộ ✓' : 'Drive chưa có dữ liệu chung'; el.className = 'drive-status ok'; }
   } catch(err){
+    // Luôn log lỗi thật ra console — chuỗi hiện trên UI chỉ là tóm tắt, xem Console (F12) để biết chính xác.
     console.error('[Drive sync] Lỗi đồng bộ:', err);
-    if (el){ el.textContent = 'Lỗi đồng bộ Drive: ' + (err.message||'').slice(0,90); el.className = 'drive-status err'; }
+    if (el){
+      const isNetworkErr = err instanceof TypeError; // fetch bị chặn hẳn (CORS/network) thường ném TypeError, không có response
+      el.textContent = isNetworkErr
+        ? 'Lỗi mạng/CORS khi gọi Drive — xem Console (F12)'
+        : ('Lỗi đồng bộ Drive: ' + (err.message||'').slice(0,80));
+      el.className = 'drive-status err';
+    }
   }
   if (btn) btn.style.opacity = '1';
-  if (el) setTimeout(()=>{ el.textContent=''; }, 9000);
+  if (el) setTimeout(()=>{ el.textContent=''; }, 8000);
 }
 document.getElementById('syncDriveBtn').addEventListener('click', ()=> loadFromDriveLatest(false));
 
@@ -2084,14 +1998,15 @@ async function fetchDriveHistoryList(){
   setDriveHistStatus('Đang tải danh sách từ Drive...', '');
   document.getElementById('refreshDriveHistory').disabled = true;
   try {
-    const data = await jsonpRequest(config.driveUrl + '?action=list');
+    const res = await fetch(config.driveUrl + '?action=list', { method:'GET' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
     if (data.status !== 'ok') throw new Error(data.message || 'Phản hồi không hợp lệ');
     driveHistoryCache = (data.files || []).sort((a,b)=> (b.dateStr+b.timeStr).localeCompare(a.dateStr+a.timeStr));
     setDriveHistStatus(`Đã tải ${driveHistoryCache.length} file từ Drive lúc ${new Date().toLocaleTimeString('vi-VN',{hour12:false})}.`, 'ok');
     renderDriveHistoryPanel();
   } catch(err){
-    console.error('[Drive history] Lỗi tải danh sách:', err);
-    setDriveHistStatus('Không tải được danh sách từ Drive. Kiểm tra lại: URL đã đúng · script đã có hàm doGet mới (hỗ trợ callback) và đã Deploy lại (New version) · quyền truy cập "Anyone". Chi tiết: ' + err.message, 'err');
+    setDriveHistStatus('Không tải được danh sách từ Drive. Kiểm tra lại: URL đã đúng · script đã có hàm doGet và đã Deploy lại (New version) · quyền truy cập "Anyone". Chi tiết lỗi: ' + err.message, 'err');
   } finally {
     document.getElementById('refreshDriveHistory').disabled = false;
   }
@@ -2131,7 +2046,9 @@ function renderDriveHistoryPanel(){
 
 async function getDriveEntryContent(id){
   if (driveContentCache.has(id)) return driveContentCache.get(id);
-  const entry = await jsonpRequest(config.driveUrl + '?action=get&id=' + encodeURIComponent(id));
+  const res = await fetch(config.driveUrl + '?action=get&id=' + encodeURIComponent(id), { method:'GET' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const entry = await res.json();
   if (!entry.employees) throw new Error('File không đúng định dạng (thiếu employees).');
   driveContentCache.set(id, entry);
   return entry;
