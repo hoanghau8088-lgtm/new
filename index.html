@@ -41,18 +41,7 @@
     --shadow:0 1px 2px rgba(20,25,35,.06), 0 10px 24px -14px rgba(20,25,35,.16);
   }
   *{box-sizing:border-box;}
-  body{
-    margin:0;
-    background:
-      radial-gradient(1200px 600px at 15% -10%, color-mix(in srgb, var(--pick) 10%, transparent) 0%, transparent 60%),
-      radial-gradient(900px 500px at 100% 0%, color-mix(in srgb, var(--pack) 10%, transparent) 0%, transparent 55%),
-      var(--bg);
-    color:var(--text);
-    font-family:var(--sans);
-    min-height:100vh;
-    padding:20px 24px 60px;
-    transition:background .2s ease,color .2s ease;
-  }
+  body{margin:0;background:radial-gradient(1200px 600px at 15% -10%, color-mix(in srgb, var(--pick) 10%, transparent) 0%, transparent 60%),radial-gradient(900px 500px at 100% 0%, color-mix(in srgb, var(--pack) 10%, transparent) 0%, transparent 55%),var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;padding:20px 24px 60px;transition:background .2s ease,color .2s ease;}
   .wrap{max-width:1320px;margin:0 auto;}
   .topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--line);}
   .brand-eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;color:var(--pick);text-transform:uppercase;margin-bottom:6px;font-weight:600;}
@@ -90,54 +79,36 @@
   .kpi-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--dim);font-weight:600;}
   .kpi-val{font-family:var(--mono);font-size:26px;font-weight:700;margin-top:6px;letter-spacing:-.02em;}
   .kpi-sub{font-size:11px;color:var(--muted);margin-top:3px;}
-  .kpi-val.g{color:var(--green);} .kpi-val.y{color:var(--yellow);} .kpi-val.r{color:var(--red);}
+  .kpi-val.g{color:var(--green);}.kpi-val.y{color:var(--yellow);}.kpi-val.r{color:var(--red);}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;box-shadow:var(--shadow);margin-bottom:16px;}
   .panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
   .panel-title{font-family:var(--display);font-size:14px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;}
-  .panel-note{font-size:11px;color:var(--dim);font-family:var(--mono);}
   .rtable{width:100%;border-collapse:collapse;font-size:13px;}
   .rtable th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--dim);font-weight:600;padding:7px 4px;border-bottom:1px solid var(--line);}
   .rtable td{padding:9px 4px;border-bottom:1px solid var(--row-line);color:var(--text);}
   .rtable td.num, .rtable th.num{text-align:right;font-family:var(--mono);}
-  .rtable tr.total td{font-weight:700;color:var(--text);border-top:1px solid var(--line);}
-  .rtable tr.grand-total td{font-weight:700;color:var(--bg);background:var(--pick);border-top:1px solid var(--line);}
-  html[data-theme="light"] .rtable tr.grand-total td{color:#fff;}
-  .rtable tr.sub td{color:var(--muted);}
   .dl-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.03em;color:var(--muted);background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:5px 9px;cursor:pointer;text-transform:uppercase;transition:.15s;}
   .dl-btn:hover{color:var(--text);border-color:var(--muted);}
   .dl-btn svg{width:11px;height:11px;flex-shrink:0;}
   .dl-btn-main{font-family:var(--mono);font-size:11.5px;font-weight:700;letter-spacing:.03em;color:var(--bg);background:var(--green);border:1px solid var(--green);border-radius:8px;padding:9px 16px;cursor:pointer;text-transform:uppercase;display:inline-flex;align-items:center;gap:8px;transition:filter .15s;}
   .dl-btn-main:hover{filter:brightness(1.08);}
   .dl-btn-main svg{width:13px;height:13px;}
-  .rtable-note{font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.6;}
   .table-scroll{max-height:420px;overflow-y:auto;overflow-x:auto;border-radius:8px;}
   .table-scroll.short{max-height:520px;}
-  .table-scroll.tall{max-height:900px;}
-  .empty{text-align:center;color:var(--dim);padding:40px 0;font-size:12.5px;}
   .config-panel{display:none;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:20px;}
   .config-panel.open{display:block;}
   .config-section{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--line);}
   .config-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
   .config-section-title{font-size:11.5px;font-weight:700;color:var(--text);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em;}
   .config-row{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
-  .config-row label{font-size:12px;color:var(--muted);width:220px;flex-shrink:0;}
+  .config-row label{font-size:12px;color:var(--muted);flex-shrink:0;}
   .config-row input{flex:1;min-width:120px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:8px 10px;font-size:12px;font-family:var(--mono);}
   .config-row input.small{max-width:110px;flex:none;}
   .config-row button{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;}
   .config-row button:hover{border-color:var(--muted);}
-  .config-hint{font-size:11px;color:var(--dim);line-height:1.6;margin-top:4px;}
   .footer-note{margin-top:26px;font-size:11px;color:var(--dim);text-align:center;line-height:1.7;}
-  @media(max-width:900px){
-    .kpis{grid-template-columns:repeat(2,1fr);}
-    .feeds{grid-template-columns:1fr;}
-    .topbar{flex-direction:column;align-items:flex-start;}
-    .clock{text-align:left;}
-    .head-actions{justify-content:flex-start;}
-  }
-  @media(max-width:520px){
-    body{padding:14px 12px 40px;}
-    h1{font-size:22px;}
-  }
+  @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr);}.feeds{grid-template-columns:1fr;}.topbar{flex-direction:column;align-items:flex-start;}.clock{text-align:left;}.head-actions{justify-content:flex-start;}}
+  @media(max-width:520px){body{padding:14px 12px 40px;}h1{font-size:22px;}}
 </style>
 </head>
 <body>
@@ -152,7 +123,7 @@
       <div id="clockDate">—</div>
       <div class="head-actions">
         <button class="dl-btn-main" id="exportAllBtn" title="Xuất toàn bộ báo cáo">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"\/><polyline points="7 10 12 15 17 10"\/><line x1="12" y1="15" x2="12" y2="3"\/></svg>
           Xuất báo cáo
         </button>
         <span class="theme-toggle" id="themeToggle">🌙 <span id="themeLabel">Dark</span></span>
@@ -209,7 +180,7 @@
   <div class="panel">
     <div class="panel-head">
       <div class="panel-title">📋 Danh sách Picking</div>
-      <button class="dl-btn" onclick="downloadTable('tblPick')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Tải xuống</button>
+      <button class="dl-btn" onclick="downloadTable('tblPick')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"\/><polyline points="7 10 12 15 17 10"\/><line x1="12" y1="15" x2="12" y2="3"\/></svg> Tải xuống</button>
     </div>
     <div class="table-scroll short">
       <table class="rtable" id="tblPick">
@@ -224,7 +195,7 @@
   <div class="panel">
     <div class="panel-head">
       <div class="panel-title">📋 Danh sách Packing</div>
-      <button class="dl-btn" onclick="downloadTable('tblPack')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Tải xuống</button>
+      <button class="dl-btn" onclick="downloadTable('tblPack')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"\/><polyline points="7 10 12 15 17 10"\/><line x1="12" y1="15" x2="12" y2="3"\/></svg> Tải xuống</button>
     </div>
     <div class="table-scroll short">
       <table class="rtable" id="tblPack">
